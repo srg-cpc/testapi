@@ -1,0 +1,71 @@
+version: '3.1'
+services:
+
+  # The nginx Web Server
+  web:
+    build:
+      context: ./
+      dockerfile: docker/web.dockerfile
+    working_dir: /var/www
+    ports:
+      - 8080:80
+    volumes:
+      - ./:/var/www
+    depends_on:
+      - "app"
+      - "mariadb"
+    networks:
+      - intership-network
+
+  # The PHP Application
+  app:
+    build:
+      context: ./
+      dockerfile: docker/app.dockerfile
+    working_dir: /var/www
+    environment:
+      DB_PORT: 3306
+      DB_HOST: mariadb
+      MAIL_HOST: mailhog
+      MAIL_PORT: 1025
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    volumes:
+      - ./:/var/www
+      - ./docker/php.ini:/usr/local/etc/php/php.ini
+    networks:
+      - intership-network
+
+  mariadb:
+    image: mariadb
+    restart: always
+    environment:
+      MYSQL_USER: testapi
+      MYSQL_PASSWORD: testapi
+      MYSQL_DATABASE : testapi
+      MYSQL_ROOT_PASSWORD : testapi
+    ports:
+      - 33060:3306
+    networks:
+      - intership-network
+
+  # Mailhog
+  mailhog:
+    image: mailhog/mailhog
+    ports:
+      - 1025:1025
+      - 8025:8025
+    networks:
+      - intership-network
+
+  # Redis
+  redis:
+    image: redis
+    ports:
+      - 6379:6379
+    networks:
+      - intership-network
+
+networks:
+  intership-network:
+    driver: bridge
